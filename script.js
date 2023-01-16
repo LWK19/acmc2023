@@ -93,11 +93,16 @@ async function updateTime() {
 async function post(meth, id, pword, ans, qn, timer) {
     document.getElementById("load").classList.remove("hidden");
     document.getElementById("load").classList.add("visible");
-    //let key = "AKfycbx4oApoLVCq6_BBTdS-pQ0ppd0I0vuQvxScCLE9F2KJoxg_G5n6Ei88S0FzNBgodj2HBA";
+    //let key = "AKfycbzr9OMroY_CzbuEKQtPmxXnfyWko8OLLFeG-nIi8XvoSHccUYCLTLH75A3K28h_x9v1wA";
     let key = "AKfycbxMP99JXZCGTcgvrpOtYnUQXT8TGn9mi631WXktfFXLxjuzfuJXc4FIoqsE47YaqGyyfQ";
     let url = "https://script.google.com/macros/s/" + key + "/exec";
     var req = await jQuery.ajax({
         crossDomain: true,
+        headers: {
+            "Content-Type": "text/plain;charset=utf-8",
+          },
+          redirect: "follow",
+    
         url: url,
         method: "POST",
         data: '{"meth": "' + meth + '", "ans": "' + ans + '", "id": "' + id + '", "qn": "' + qn + '", "timer": "' + timer + '", "pword": "' + pword + '"}',
