@@ -1,416 +1,224 @@
-var script = document.createElement('script');
-script.src = 'https://code.jquery.com/jquery-3.6.0.min.js';
-document.getElementsByTagName('head')[0].appendChild(script);
-var qnlink;
-function str_pad_left(string, pad, length) {
-    return (new Array(length + 1).join(pad) + string).slice(-length);
-}
+let cursor=0;
+let question=-1;
+let currentGuess = [[],[],[],[],[],[],[],[],[]];
+let numbox = 0;
+let completed = [false,false,false,false,false,false,false,false,false];
+let team = 0;
+var loading=false;
 
-function instructTimer() {
-    const instructInterval = setInterval(function () {
-        var now = new Date().getTime() / 1000;
-        var elapsed = now - starts;
-        var timeleft = time - elapsed;
-        var days = Math.floor(timeleft / 86400);
-        var hours = Math.floor(timeleft % 86400 / 3600);
-        var mins = Math.floor(timeleft % 3600 / 60);
-        var secs = Math.floor(timeleft % 60);
-        var str = "";
-        if (days > 0) {
-            str = days + ':';
+
+document.addEventListener("keyup", (e) => {
+    if(question>-1 && !loading){
+            let pressedKey = String(e.key);
+        if (pressedKey === "Backspace" && cursor !== 0) {
+            deleteLetter();
+            return;
         }
-        str = str + hours + ':' + str_pad_left(mins, '0', 2) + ':' + str_pad_left(secs, '0', 2);
-        document.getElementById("startBtn").innerHTML = str;
-        if (timeleft < 1) {
-            clearInterval(instructInterval);
-            document.getElementById("startBtn").innerHTML = "Start Quiz";
-            document.getElementById("startBtn").disabled = false;
-        }
-    }, 100);
-
-
-}
-
-function mainTimer() {
-    const mainInterval = setInterval(function () {
-        var now = new Date().getTime() / 1000;
-        var elapsed = now - mainStarts;
-        var timeleft = time - elapsed;
-        var tsec = 60 * 60;
-        var hours = Math.floor(timeleft / 3600);
-        var mins = Math.floor(timeleft % 3600 / 60);
-        var secs = Math.floor(timeleft % 60);
-        document.getElementById("clock").innerHTML = hours + ':' + str_pad_left(mins, '0', 2) + ':' + str_pad_left(secs, '0', 2);
-        document.getElementById("progress").style.width = timeleft * 150 / tsec + "px";
-        
-        if (timeleft < 1) {
-            clearInterval(mainInterval);
-            location.href = 'finish';
-        }
-    }, 100);
-}
-
-async function updateMainTime() {
-    var resp = await post("get_time", getCookie("username"), getCookie("password"), "", "", "main");
-    console.log(resp);
-    if (resp == "Incorrect Password") {
-        location.href = "index";
-    } else if (resp == "Incorrect Username") {
-        location.href = "index";
-    } else if (resp == "Error. Start Quiz") {
-        location.href = "instructions";
-    } else if (resp == "Competition Over") {
-        location.href = "finish";
-    } else if (resp == "Time is Up") {
-        alert("Time's Up!");
-        location.href = "finish";
-    } else if (resp == "Already Submitted") {
-        location.href = "finish";
-    } else if (resp == "Not Started") {
-        location.href = "instructions";
-    } else {
-        time = parseInt(resp);
-        mainStarts = new Date().getTime() / 1000;
-    }
-}
-async function updateTime() {
-    var resp = await post("get_time", getCookie("username"), getCookie("password"), "", "", "inst");
-    console.log(resp);
-    if (resp == "Incorrect Password") {
-        location.href = "index";
-    } else if (resp == "Incorrect Username") {
-        location.href = "index";
-    } else if (resp == "Competition Over") {
-        location.href = "finish";
-    } else if (resp == "Already Submitted") {
-        location.href = "finish";
-    } else {
-        time = parseInt(resp);
-        starts = new Date().getTime() / 1000;
-    }
-}
-
-async function post(meth, id, pword, ans, qn, timer) {
-    document.getElementById("load").classList.remove("hidden");
-    document.getElementById("load").classList.add("visible");
-    //let key = "AKfycbzr9OMroY_CzbuEKQtPmxXnfyWko8OLLFeG-nIi8XvoSHccUYCLTLH75A3K28h_x9v1wA";
-    let key = "AKfycbwJFbWXKKUNMEFqmrjd0YxtqZmILOZb-otrjUsqD4Dop6ZuGNxd0mTbO4UrMrBmg8iJOA";
-    let url = "https://script.google.com/macros/s/" + key + "/exec";
-    var req = await jQuery.ajax({
-        crossDomain: true,
-        headers: {
-            "Content-Type": "text/plain;charset=utf-8",
-          },
-          redirect: "follow",
     
+        if (pressedKey === "Enter") {
+            checkGuess(question);
+            return;
+        }
+    
+        let found = pressedKey.match(/[a-z]/i);
+        if (!found || found.input.length > 1) {
+            return;
+        } else {
+            insertLetter(pressedKey);
+        }
+    }
+});
+
+function setCursor(curs,ne){
+    if(question>-1){
+        if(!completed[question]){
+            let qn = document.getElementsByClassName("question")[question];
+            let row = qn.children[1];
+            
+                if(curs!=-1 && curs!=numbox){
+                    row.children[curs].style.backgroundColor = 'transparent';
+                }
+                if(ne!=-1 && ne !=numbox){
+                    row.children[ne].style.backgroundColor = 'ececec';
+                }
+    
+        }
+    }
+    
+}
+
+function insertLetter (pressedKey) {
+    if(!completed[question]){
+        if (cursor === numbox) {
+            return;
+        }
+        pressedKey = pressedKey.toUpperCase();
+        let qn = document.getElementsByClassName("question")[question];
+        let row = qn.children[1];
+        let box = row.children[cursor];
+        box.textContent = pressedKey;
+        box.classList.add("filled-box");
+        currentGuess[question].push(pressedKey);
+
+        setCursor(cursor,cursor+1);
+        cursor += 1;
+    }
+}
+
+function deleteLetter () {
+    if(!completed[question]){
+        let qn = document.getElementsByClassName("question")[question];
+        let row = qn.children[1];
+        let box = row.children[cursor - 1];
+        box.textContent = "";
+        box.classList.remove("filled-box");
+        currentGuess[question].pop();
+        setCursor(cursor,cursor-1);
+        cursor -= 1;
+    }
+}
+
+
+function checkGuess(qnum) {
+    if(!loading){
+        question=qnum;
+        if(!completed[question] && cursor>0){
+            let qn = document.getElementsByClassName("question")[question]; 
+    
+            let row = qn.children[1];
+            
+            let guessString = '';
+            for (const val of currentGuess[question]) {
+                guessString += val;
+            }
+            
+            var load = document.createElement("div");
+            load.setAttribute('class', 'loader');
+            load.setAttribute('id',"loading");
+            
+            qn.append(load);
+            
+            loading=true;
+            var rigg = post("check", team, question, guessString);
+            rigg.fail(function() {
+                
+              if (rigg.responseText === "Correct") {
+                  qn.style.backgroundColor = '00c851';
+                completed[question]=true;
+                question=-1;
+                
+    
+            } else if(rigg.responseText ==="Wrong"){
+                for (let i = 0; i < numbox; i++) {
+                    let box = row.children[i];
+                    
+                    let j=50;
+                    let timer = setInterval( function(){
+                        box.style.backgroundColor = 'hsl(0,100%,'+String(j)+'%)';
+                        j=j+1;
+                        if(j>100){clearInterval(timer);}
+                    }, 20);
+                }
+            }else{alert("Error. Please Contact EXCO.");} 
+            loading=false;
+            function removeLoader(){
+                $( '#loading' ).fadeOut(200, function() {
+                  $( '#loading' ).remove();
+              });  
+            }
+            removeLoader();
+            });
+            
+        }
+    }
+}
+
+function setQuestion(num,bx){
+    if(!loading){
+        setCursor(cursor,-1);
+        question=num;
+        numbox=bx;
+        let qn = document.getElementsByClassName("question")[question];
+        let row = qn.children[1];
+        
+        for(let i = 0;i<numbox;i++){
+            if(!row.children[i].classList.contains("filled-box")){
+                
+                cursor=i;
+                setCursor(-1,cursor);
+                break;
+            }
+        }
+    }
+}
+
+function getTeam(tem){
+    team=tem;
+    document.cookie = "team=" + tem + ";max-age=7200;path=/";
+    location.href = 'main';
+}
+
+function post(meth,team,qn,ans){
+    let url = "https://script.google.com/macros/s/AKfycbzObm08dGkR7HgU9-LV5esgc_5csgoS9RpRD1Avpbgqc4h5jaHjfl_n3zM_A-GiHEV1/exec?callback=loadData";
+            
+    var req = jQuery.ajax({
+        crossDomain: true,
         url: url,
         method: "POST",
-        data: '{"meth": "' + meth + '", "ans": "' + ans + '", "id": "' + id + '", "qn": "' + qn + '", "timer": "' + timer + '", "pword": "' + pword + '"}',
+        dataType: "json",
+        data: '{"meth": "'+meth+'", "ans": "'+ans+'", "team": "'+team+'", "qn": "'+qn+'"}'
     });
-    document.getElementById("load").classList.remove("visible");
-    document.getElementById("load").classList.add("hidden");
     return req;
-}
-async function login() {
-    usern = document.getElementById("username").value.replace(/\s/g, '');
-    pword = document.getElementById("password").value.replace(/\s/g, '');
-    var resp = await post(meth = "login", id = usern, pword = pword);
-    if (resp == "Login Success") {
-        document.cookie = "username=" + usern + ";max-age=7200;path=/";
-        document.cookie = "password=" + pword + ";max-age=7200;path=/";
-        location.href = 'instructions'
-    } else if (resp == "Incorrect Password") {
-        document.getElementById("incorrect").innerHTML = "Incorrect Password";
-    } else if (resp == "Incorrect Username") {
-        document.getElementById("incorrect").innerHTML = "Incorrect Username";
-    } else if (resp == "Competition Over") {
-        location.href = "finish";
-    } else if (resp == "Time Up") {
-        location.href = "feedback";
-    } else if (resp == "Already Submitted") {
-        location.href = "finish";
-    } else {
-        console.log(resp);
-        alert("Response error");
-    }
+    
 }
 
-async function getTime() {
-    var resp = await post("get_time", getCookie("username"), getCookie("password"), "", "", "inst");
-    console.log(resp);
-    if (resp == "Incorrect Password") {
-        location.href = "index";
-    } else if (resp == "Incorrect Username") {
-        location.href = "index";
-    } else if (resp == "Competition Over") {
-        location.href = "finish";
-    } else if (resp == "Already Submitted") {
-        location.href = "finish";
-    } else {
-        time = parseInt(resp);
-        starts = new Date().getTime() / 1000;
-        instructTimer();
-    }
-
-}
-
-async function getMainTime() {
-    var resp = await post("get_time", getCookie("username"), getCookie("password"), "", "", "main");
-    console.log(resp);
-    if (resp == "Incorrect Password") {
-        location.href = "index";
-    } else if (resp == "Incorrect Username") {
-        location.href = "index";
-    } else if (resp == "Error. Start Quiz") {
-        location.href = "instructions";
-    } else if (resp == "Competition Over") {
-        location.href = "finish";
-    } else if (resp == "Time is Up") {
-        alert("Time's Up!");
-        location.href = "finish";
-    } else if (resp == "Already Submitted") {
-        location.href = "finish";
-    } else if (resp == "Not Started") {
-        location.href = "instructions";
-    } else {
-        time = parseInt(resp);
-        mainStarts = new Date().getTime() / 1000;
-        mainTimer();
-    }
-
-}
-async function start() {
-    var resp = await post("start_time", getCookie("username"), getCookie("password"));
-    console.log(resp);
-    if (resp == "Start Time Recorded") {
-        var ans_list = ["", "", "", "", "", "", "", "", "", "", "", "", "", "", ""];
-        document.cookie = "ans_local=" + JSON.stringify(ans_list) + ";max-age=7200;path=/";
-        location.href = 'main';
-    }
-    else if (resp == "Incorrect Password") {
-        location.href = "index";
-    } else if (resp == "Incorrect Username") {
-        location.href = "index";
-    } else if (resp == "Competition Over") {
-        location.href = "finish";
-    } else if (resp == "Already Submitted") {
-        location.href = "finish";
-    } else { alert("Error. Reload and try again."); }
-}
-
-async function getName() {
-    var resp = await post("get_name", getCookie("username"), getCookie("password"));
-    console.log(resp);
-    if (resp == "Error: ID Not Found") { alert("Error: ID Not Found"); }
-    else if (resp == "Incorrect Password") {
-        location.href = "index";
-    } else if (resp == "Incorrect Username") {
-        location.href = "index";
-    } else if (resp == "Time Up") {
-        location.href = "feedback";
-    } else if (resp == "Competition Over") {
-        location.href = "finish";
-    } else if (resp == "Already Submitted") {
-        location.href = "finish";
-    } else { document.getElementById("name").innerHTML = resp; }
-}
-
-async function saveAns() {
-    if (qn < 11) {
-        var checked = document.querySelectorAll('input[type=checkbox]:checked');
-        if (checked.length == 0) {
-            alert("No answer selected");
-        } else if (checked.length == 1) {
-            ans = checked[0].value;
-
-            var resp = await post("save_ans", getCookie("username"), pword = getCookie("password"), ans = ans, qn = qn);
-            console.log(resp);
-            if (resp == "Error: ID Not Found") { alert("Error: ID Not Found"); }
-            else if (resp == "Incorrect Password") {
-                location.href = "index";
-            } else if (resp == "Incorrect Username") {
-                location.href = "index";
-            } else if (resp == "Competition Over") {
-                location.href = "finish";
-            } else if (resp == "Already Submitted") {
-                location.href = "finish";
-            } else {
-                var ans_list = JSON.parse(getCookie("ans_local"));
-                ans_list[qn - 1] = ans;
-                document.cookie = "ans_local=" + JSON.stringify(ans_list) + ";max-age=7200;path=/";
-
-                shadeQNum();
-                nextQn();
+function init(){
+    //create big loader
+    
+    
+    var bload = document.createElement("div");
+    bload.setAttribute('class', 'loader');
+    bload.setAttribute('id',"bloading");
+    
+    document.getElementById("buff").append(bload);
+    
+    var req = post("get", team, 0, 0);
+    console.log(req);
+        req.fail(function() {
+            //update thing here
+            console.log(req.responseText);
+            
+            if(req.responseText != ""){
+                    var arr = req.responseText.split("");
+                    for (const i in arr){
+                        
+                        document.getElementsByClassName("question")[Number(arr[i])].style.backgroundColor = '00c851';
+                    }
             }
-        } else {
-            alert("Error. More than 1 option selected");
-        }
-    } else {
-        var ans = document.getElementById('open').value.replace(/\s/g, '');
-        if (ans == "") {
-            alert("No answer entered");
-        } else {
-            var resp = await post("save_ans", getCookie("username"), pword = getCookie("password"), ans = ans, qn = qn);
-            console.log(resp);
-            if (resp == "Error: ID Not Found") { alert("Error: ID Not Found"); }
-            else if (resp == "Incorrect Password") {
-                location.href = "index";
-            } else if (resp == "Incorrect Username") {
-                location.href = "index";
-            } else if (resp == "Competition Over") {
-                location.href = "finish";
-            } else if (resp == "Error: Input Not Number") {
-                alert("Input Error. Try Again.");
-            } else if (resp == "Already Submitted") {
-                location.href = "finish";
-            } else {
-                var ans_list = JSON.parse(getCookie("ans_local"));
-                ans_list[qn - 1] = ans;
-                document.cookie = "ans_local=" + JSON.stringify(ans_list) + ";max-age=7200;path=/";
-                shadeQNum();
-                nextQn();
+            function removeBloader(){
+            $( '#bloading' ).fadeOut(200, function() {
+              $( '#bloading' ).remove();
+              });  
             }
-        }
-    }
-
-}
-async function initQn() {
-    var resp = await post("get_qn", getCookie("username"), pword = getCookie("password"), ans = "", qn = qn);
-    console.log(resp);
-    if (resp == "Incorrect Password") {
-        location.href = "index";
-    } else if (resp == "Incorrect Username") {
-        location.href = "index";
-    } else if (resp == "Competition Over") {
-        location.href = "finish";
-    } else if (resp == "Already Submitted") {
-        location.href = "finish";
-    } else {
-        qnlink = JSON.parse(resp);
-        for (var i = 0; i < 15; i++) {
-            preload(qnlink[i], i);
-        }
-        changeQn(1);
-    }
-}
-function getQn() {
-    document.getElementById("question-img").removeChild(document.getElementById("question-img").lastChild);
-    document.getElementById("question-img").appendChild(images[qn - 1]);
-}
-function changeQn(q) {
-    qn = q;
-    document.getElementById("question-num").innerHTML = "Question " + qn;
-    var checkboxes = document.getElementsByName('opt[]');
-    for (var checkbox of checkboxes) {
-        checkbox.checked = false;
-    }
-    showAns();
-
-    getQn();
-    if (qn < 11) {
-        toggle_visibility('input-mcq', 'show');
-        toggle_visibility('input-open', 'hide');
-    } else {
-        toggle_visibility('input-mcq', 'hide');
-        toggle_visibility('input-open', 'show');
-    }
-}
-function nextQn() {
-    if (qn < 15) {
-        changeQn(qn + 1);
-    }
-}
-function showAns() {
-    var ans_list = JSON.parse(getCookie("ans_local"));
-    if (qn > 10) {
-        document.getElementById('open').value = ans_list[qn - 1];
-    } else {
-        //check the checkbox corresponds to .value = ans_list[qn-1]
-        if (ans_list[qn - 1] != "") {
-            document.getElementById("opt" + ans_list[qn - 1]).checked = true;
-        }
-    }
-}
-
-async function shadeQNum() {
-    var resp = await post("get_completed_qn", getCookie("username"), pword = getCookie("password"));
-    console.log(resp);
-    if (resp == "Incorrect Password") {
-        location.href = "index";
-    } else if (resp == "Incorrect Username") {
-        location.href = "index";
-    } else if (resp == "Competition Over") {
-        location.href = "finish";
-    } else if (resp == "Already Submitted") {
-        location.href = "finish";
-    } else {
-        var ansqn = resp.split(',');
-        for (var i = 1; i < 16; i++) {
-            if (ansqn[i - 1] == "") {
-                document.getElementById("q" + i).style.backgroundColor = '';
-            } else {
-                document.cookie = "ans_local=" + JSON.stringify(ansqn) + ";max-age=7200;path=/";
-                document.getElementById("q" + i).style.backgroundColor = "#55E679";
+            removeBloader();
+        });
+        req.done(function() {
+            //update thing here
+            console.log(req.responseText);
+            
+            if(req.responseText != ""){
+                    var arr = req.responseText.split("");
+                    for (const i in arr){
+                        
+                        document.getElementsByClassName("question")[Number(arr[i])].style.backgroundColor = '00c851';
+                    }
             }
-        }
-        showAns();
-
-    }
-
-}
-function toggle_visibility(id, cs) {
-    if (cs == "show") {
-        document.getElementById(id).style.display = 'flex';
-    } else if (cs == "hide") {
-        document.getElementById(id).style.display = 'none';
-    }
-}
-function submit() {
-    document.getElementById('confirmSubmit').classList.remove('visible');
-    document.getElementById('confirmSubmit').classList.add('hidden');
-    //submit ans
-    location.href = 'finish';
-}
-function enlarge() {
-    document.getElementById("lightbox").style.visibility = "visible";
-    document.getElementById("img-enlarge").removeChild(document.getElementById("img-enlarge").firstChild);
-    document.getElementById("img-enlarge").appendChild(images[qn - 1].cloneNode(true));
-}
-function getCookie(cname) {
-    let name = cname + "=";
-    let decodedCookie = decodeURIComponent(document.cookie);
-    let ca = decodedCookie.split(';');
-    for (let i = 0; i < ca.length; i++) {
-        let c = ca[i];
-        while (c.charAt(0) == ' ') {
-            c = c.substring(1);
-        }
-        if (c.indexOf(name) == 0) {
-            return c.substring(name.length, c.length);
-        }
-    }
-    return "";
-}
-var images = [];
-function preload(url, i) {
-    images[i] = new Image();
-    images[i].src = url;
-    images[i].style = "max-width: 100%;max-height:100%;object-fit:cover;margin:auto";
-}
-
-async function finish() {
-    var resp = await post("end_time", getCookie("username"), getCookie("password"));
-    console.log(resp);
-    if (resp == "End Time Recorded") {
-        submit();
-    }
-    else if (resp == "Incorrect Password") {
-        location.href = "index";
-    } else if (resp == "Incorrect Username") {
-        location.href = "index";
-    } else if (resp == "Competition Over") {
-        location.href = "finish";
-    } else if (resp == "Already Submitted") {
-        location.href = "finish";
-    } else { alert("Error. Reload and try again."); }
+            function removeBloader(){
+            $( '#bloading' ).fadeOut(200, function() {
+              $( '#bloading' ).remove();
+              });  
+            }
+            removeBloader();
+        });
+    
 }
