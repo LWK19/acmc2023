@@ -94,7 +94,7 @@ async function post(meth, id, pword, ans, qn, timer) {
     document.getElementById("load").classList.remove("hidden");
     document.getElementById("load").classList.add("visible");
     //let key = "AKfycbzr9OMroY_CzbuEKQtPmxXnfyWko8OLLFeG-nIi8XvoSHccUYCLTLH75A3K28h_x9v1wA";
-    let key = "AKfycbxMP99JXZCGTcgvrpOtYnUQXT8TGn9mi631WXktfFXLxjuzfuJXc4FIoqsE47YaqGyyfQ";
+    let key = "AKfycbx3EpQQidIvZTMtMN9cBy75AqSL7Xtc0hBSusrRSMp1hdppGRgVN8bWKDNdDsShWOTtEw";
     let url = "https://script.google.com/macros/s/" + key + "/exec";
     var req = await jQuery.ajax({
         crossDomain: true,
