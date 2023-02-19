@@ -5,6 +5,8 @@ var qnlink;
 function str_pad_left(string, pad, length) {
     return (new Array(length + 1).join(pad) + string).slice(-length);
 }
+//asdsadad
+
 
 function instructTimer() {
     const instructInterval = setInterval(function () {
