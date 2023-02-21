@@ -1,56 +1,83 @@
 var script = document.createElement('script');
 script.src = 'https://code.jquery.com/jquery-3.6.0.min.js';
 document.getElementsByTagName('head')[0].appendChild(script);
-var qnlink;
-function str_pad_left(string, pad, length) {
-    return (new Array(length + 1).join(pad) + string).slice(-length);
-}
-//should be 2023
 
-
-function instructTimer() {
-    const instructInterval = setInterval(function () {
-        var now = new Date().getTime() / 1000;
-        var elapsed = now - starts;
-        var timeleft = time - elapsed;
-        var days = Math.floor(timeleft / 86400);
-        var hours = Math.floor(timeleft % 86400 / 3600);
-        var mins = Math.floor(timeleft % 3600 / 60);
-        var secs = Math.floor(timeleft % 60);
-        var str = "";
-        if (days > 0) {
-            str = days + ':';
-        }
-        str = str + hours + ':' + str_pad_left(mins, '0', 2) + ':' + str_pad_left(secs, '0', 2);
-        document.getElementById("startBtn").innerHTML = str;
-        if (timeleft < 1) {
-            clearInterval(instructInterval);
-            document.getElementById("startBtn").innerHTML = "Start Quiz";
-            document.getElementById("startBtn").disabled = false;
-        }
-    }, 100);
-
-
+////////////////////////////////////////////////////////////////
+//API.js
+//G SCRIPT
+async function post_g(meth, id, pword, ans, qn, timer) {
+    document.getElementById("load").classList.remove("hidden");
+    document.getElementById("load").classList.add("visible");
+    //let key = "AKfycbzr9OMroY_CzbuEKQtPmxXnfyWko8OLLFeG-nIi8XvoSHccUYCLTLH75A3K28h_x9v1wA";
+    let key = "AKfycbwJFbWXKKUNMEFqmrjd0YxtqZmILOZb-otrjUsqD4Dop6ZuGNxd0mTbO4UrMrBmg8iJOA";
+    let url = "https://script.google.com/macros/s/" + key + "/exec";
+    var req = await jQuery.ajax({
+        crossDomain: true,
+        headers: {
+            "Content-Type": "text/plain;charset=utf-8",
+          },
+          redirect: "follow",
+    
+        url: url,
+        method: "POST",
+        data: '{"meth": "' + meth + '", "ans": "' + ans + '", "id": "' + id + '", "qn": "' + qn + '", "timer": "' + timer + '", "pword": "' + pword + '"}',
+    });
+    document.getElementById("load").classList.remove("visible");
+    document.getElementById("load").classList.add("hidden");
+    return req;
 }
 
-function mainTimer() {
-    const mainInterval = setInterval(function () {
-        var now = new Date().getTime() / 1000;
-        var elapsed = now - mainStarts;
-        var timeleft = time - elapsed;
-        var tsec = 60 * 60;
-        var hours = Math.floor(timeleft / 3600);
-        var mins = Math.floor(timeleft % 3600 / 60);
-        var secs = Math.floor(timeleft % 60);
-        document.getElementById("clock").innerHTML = hours + ':' + str_pad_left(mins, '0', 2) + ':' + str_pad_left(secs, '0', 2);
-        document.getElementById("progress").style.width = timeleft * 150 / tsec + "px";
-        
-        if (timeleft < 1) {
-            clearInterval(mainInterval);
-            location.href = 'finish';
-        }
-    }, 100);
+//CLOUDFLARE
+async function post(payload){
+    let url = "https://acmc2023.lwk19.workers.dev/";
+            
+    var req = await fetch( url, {
+        method: "POST",
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },          
+        body: JSON.stringify(payload)
+        /*`{
+            "ans": "ans"
+        }`
+        */
+    }).then( function (response){
+        return response.json()
+    }
+    ).then(function (data){
+        return data;
+    })
+    
+    return req.status;
 }
+
+//TODO change login
+async function login() {
+    usern = document.getElementById("username").value.replace(/\s/g, '');
+    pword = document.getElementById("password").value.replace(/\s/g, '');
+    var resp = await post({'meth':"login", 'id':usern, 'pword':pword});
+    if (resp == "Login Success") {
+        document.cookie = "username=" + usern + ";max-age=7200;path=/";
+        document.cookie = "password=" + pword + ";max-age=7200;path=/";
+        location.href = 'instructions'
+    } else if (resp == "Incorrect Password") {
+        document.getElementById("incorrect").innerHTML = "Incorrect Password";
+    } else if (resp == "Incorrect Username") {
+        document.getElementById("incorrect").innerHTML = "Incorrect Username";
+    } else if (resp == "Competition Over") {
+        location.href = "finish";
+    } else if (resp == "Time Up") {
+        location.href = "feedback";
+    } else if (resp == "Already Submitted") {
+        location.href = "finish";
+    } else {
+        console.log(resp);
+        alert("Response error");
+    }
+}
+
+
 
 async function updateMainTime() {
     var resp = await post("get_time", getCookie("username"), getCookie("password"), "", "", "main");
@@ -92,50 +119,7 @@ async function updateTime() {
     }
 }
 
-async function post(meth, id, pword, ans, qn, timer) {
-    document.getElementById("load").classList.remove("hidden");
-    document.getElementById("load").classList.add("visible");
-    //let key = "AKfycbzr9OMroY_CzbuEKQtPmxXnfyWko8OLLFeG-nIi8XvoSHccUYCLTLH75A3K28h_x9v1wA";
-    let key = "AKfycbwJFbWXKKUNMEFqmrjd0YxtqZmILOZb-otrjUsqD4Dop6ZuGNxd0mTbO4UrMrBmg8iJOA";
-    let url = "https://script.google.com/macros/s/" + key + "/exec";
-    var req = await jQuery.ajax({
-        crossDomain: true,
-        headers: {
-            "Content-Type": "text/plain;charset=utf-8",
-          },
-          redirect: "follow",
-    
-        url: url,
-        method: "POST",
-        data: '{"meth": "' + meth + '", "ans": "' + ans + '", "id": "' + id + '", "qn": "' + qn + '", "timer": "' + timer + '", "pword": "' + pword + '"}',
-    });
-    document.getElementById("load").classList.remove("visible");
-    document.getElementById("load").classList.add("hidden");
-    return req;
-}
-async function login() {
-    usern = document.getElementById("username").value.replace(/\s/g, '');
-    pword = document.getElementById("password").value.replace(/\s/g, '');
-    var resp = await post(meth = "login", id = usern, pword = pword);
-    if (resp == "Login Success") {
-        document.cookie = "username=" + usern + ";max-age=7200;path=/";
-        document.cookie = "password=" + pword + ";max-age=7200;path=/";
-        location.href = 'instructions'
-    } else if (resp == "Incorrect Password") {
-        document.getElementById("incorrect").innerHTML = "Incorrect Password";
-    } else if (resp == "Incorrect Username") {
-        document.getElementById("incorrect").innerHTML = "Incorrect Username";
-    } else if (resp == "Competition Over") {
-        location.href = "finish";
-    } else if (resp == "Time Up") {
-        location.href = "feedback";
-    } else if (resp == "Already Submitted") {
-        location.href = "finish";
-    } else {
-        console.log(resp);
-        alert("Response error");
-    }
-}
+
 
 async function getTime() {
     var resp = await post("get_time", getCookie("username"), getCookie("password"), "", "", "inst");
@@ -277,6 +261,8 @@ async function saveAns() {
 
 }
 async function initQn() {
+    var qnlink;
+
     var resp = await post("get_qn", getCookie("username"), pword = getCookie("password"), ans = "", qn = qn);
     console.log(resp);
     if (resp == "Incorrect Password") {
@@ -294,6 +280,99 @@ async function initQn() {
         }
         changeQn(1);
     }
+}
+
+
+
+async function shadeQNum() {
+    var resp = await post("get_completed_qn", getCookie("username"), pword = getCookie("password"));
+    console.log(resp);
+    if (resp == "Incorrect Password") {
+        location.href = "index";
+    } else if (resp == "Incorrect Username") {
+        location.href = "index";
+    } else if (resp == "Competition Over") {
+        location.href = "finish";
+    } else if (resp == "Already Submitted") {
+        location.href = "finish";
+    } else {
+        var ansqn = resp.split(',');
+        for (var i = 1; i < 16; i++) {
+            if (ansqn[i - 1] == "") {
+                document.getElementById("q" + i).style.backgroundColor = '';
+            } else {
+                document.cookie = "ans_local=" + JSON.stringify(ansqn) + ";max-age=7200;path=/";
+                document.getElementById("q" + i).style.backgroundColor = "#55E679";
+            }
+        }
+        showAns();
+
+    }
+
+}
+
+async function finish() {
+    var resp = await post("end_time", getCookie("username"), getCookie("password"));
+    console.log(resp);
+    if (resp == "End Time Recorded") {
+        submit();
+    }
+    else if (resp == "Incorrect Password") {
+        location.href = "index";
+    } else if (resp == "Incorrect Username") {
+        location.href = "index";
+    } else if (resp == "Competition Over") {
+        location.href = "finish";
+    } else if (resp == "Already Submitted") {
+        location.href = "finish";
+    } else { alert("Error. Reload and try again."); }
+}
+
+
+//////////////////////////////////////////////////////////////
+//shared.js
+function str_pad_left(string, pad, length) {
+    return (new Array(length + 1).join(pad) + string).slice(-length);
+}
+function instructTimer() {
+    const instructInterval = setInterval(function () {
+        var now = new Date().getTime() / 1000;
+        var elapsed = now - starts;
+        var timeleft = time - elapsed;
+        var days = Math.floor(timeleft / 86400);
+        var hours = Math.floor(timeleft % 86400 / 3600);
+        var mins = Math.floor(timeleft % 3600 / 60);
+        var secs = Math.floor(timeleft % 60);
+        var str = "";
+        if (days > 0) {
+            str = days + ':';
+        }
+        str = str + hours + ':' + str_pad_left(mins, '0', 2) + ':' + str_pad_left(secs, '0', 2);
+        document.getElementById("startBtn").innerHTML = str;
+        if (timeleft < 1) {
+            clearInterval(instructInterval);
+            document.getElementById("startBtn").innerHTML = "Start Quiz";
+            document.getElementById("startBtn").disabled = false;
+        }
+    }, 100);
+}
+function mainTimer() {
+    const mainInterval = setInterval(function () {
+        var now = new Date().getTime() / 1000;
+        var elapsed = now - mainStarts;
+        var timeleft = time - elapsed;
+        var tsec = 60 * 60;
+        var hours = Math.floor(timeleft / 3600);
+        var mins = Math.floor(timeleft % 3600 / 60);
+        var secs = Math.floor(timeleft % 60);
+        document.getElementById("clock").innerHTML = hours + ':' + str_pad_left(mins, '0', 2) + ':' + str_pad_left(secs, '0', 2);
+        document.getElementById("progress").style.width = timeleft * 150 / tsec + "px";
+        
+        if (timeleft < 1) {
+            clearInterval(mainInterval);
+            location.href = 'finish';
+        }
+    }, 100);
 }
 function getQn() {
     document.getElementById("question-img").removeChild(document.getElementById("question-img").lastChild);
@@ -332,33 +411,6 @@ function showAns() {
             document.getElementById("opt" + ans_list[qn - 1]).checked = true;
         }
     }
-}
-
-async function shadeQNum() {
-    var resp = await post("get_completed_qn", getCookie("username"), pword = getCookie("password"));
-    console.log(resp);
-    if (resp == "Incorrect Password") {
-        location.href = "index";
-    } else if (resp == "Incorrect Username") {
-        location.href = "index";
-    } else if (resp == "Competition Over") {
-        location.href = "finish";
-    } else if (resp == "Already Submitted") {
-        location.href = "finish";
-    } else {
-        var ansqn = resp.split(',');
-        for (var i = 1; i < 16; i++) {
-            if (ansqn[i - 1] == "") {
-                document.getElementById("q" + i).style.backgroundColor = '';
-            } else {
-                document.cookie = "ans_local=" + JSON.stringify(ansqn) + ";max-age=7200;path=/";
-                document.getElementById("q" + i).style.backgroundColor = "#55E679";
-            }
-        }
-        showAns();
-
-    }
-
 }
 function toggle_visibility(id, cs) {
     if (cs == "show") {
@@ -400,19 +452,4 @@ function preload(url, i) {
     images[i].style = "max-width: 100%;max-height:100%;object-fit:cover;margin:auto";
 }
 
-async function finish() {
-    var resp = await post("end_time", getCookie("username"), getCookie("password"));
-    console.log(resp);
-    if (resp == "End Time Recorded") {
-        submit();
-    }
-    else if (resp == "Incorrect Password") {
-        location.href = "index";
-    } else if (resp == "Incorrect Username") {
-        location.href = "index";
-    } else if (resp == "Competition Over") {
-        location.href = "finish";
-    } else if (resp == "Already Submitted") {
-        location.href = "finish";
-    } else { alert("Error. Reload and try again."); }
-}
+
