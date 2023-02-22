@@ -36,7 +36,10 @@ async function post(payload){
         method: "POST",
         headers: {
             'Accept': 'application/json',
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Headers': '*',
+			'Access-Control-Allow-Methods': 'POST',
+			'Access-Control-Allow-Origin': '*',
         },          
         body: JSON.stringify(payload)
         /*`{
