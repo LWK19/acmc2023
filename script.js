@@ -27,6 +27,7 @@ async function post_g(meth, id, pword, ans, qn, timer) {
     return req;
 }
 
+post({"ans":"ans"});
 //CLOUDFLARE
 async function post(payload){
     let url = "https://acmc2023.lwk19.workers.dev/";
@@ -49,7 +50,7 @@ async function post(payload){
         return data;
     })
     
-    return req.status;
+    console.log(req.status);
 }
 
 //TODO change login
