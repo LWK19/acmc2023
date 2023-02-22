@@ -30,7 +30,7 @@ async function post_g(meth, id, pword, ans, qn, timer) {
 post({"ans":"ans"});
 //CLOUDFLARE
 async function post(payload){
-    let url = "https://acmc2023.lwk19.workers.dev/";
+    let url = "https://acmc2023-worker.lwk19.workers.dev/";
             
     var req = await fetch( url, {
         method: "POST",
