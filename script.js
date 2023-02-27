@@ -9,8 +9,8 @@ globalThis.qn;
 async function post(payload){
     document.getElementById("load").classList.remove("hidden");
     document.getElementById("load").classList.add("visible");
-    //let url = "https://acmc2023-worker.lwk19.workers.dev/";
-    let url = "http://192.168.184.224:8787/";
+    let url = "https://acmc2023-worker.lwk19.workers.dev/";
+    //let url = "http://192.168.184.224:8787/";
             
     var req = await fetch( url, {
         method: "POST",
