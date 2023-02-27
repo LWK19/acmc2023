@@ -5,14 +5,16 @@ document.getElementsByTagName('head')[0].appendChild(script);
 ////////////////////////////////////////////////////////////////
 //API.js
 
-post({"ans":"ans"});
+post({"method":"get_time", "token":"y2mibs1670nli594ehw16xd6vx6dwk3s", "timermode":"main"})
 //CLOUDFLARE
 async function post(payload){
     let url = "https://acmc2023-worker.lwk19.workers.dev/";
+    //let url = "http://192.168.184.224:8787/";
             
     var req = await fetch( url, {
         method: "POST",
         headers: {
+            "Access-Control-Request-Private-Network": "true",
             'Accept': 'application/json',
             'Content-Type': 'application/json',
             'Access-Control-Allow-Headers': '*',
@@ -29,7 +31,7 @@ async function post(payload){
     console.log(req.status);
 }
 
-//TODO change login
+
 async function login() {
     usern = document.getElementById("username").value.replace(/\s/g, '');
     pword = document.getElementById("password").value.replace(/\s/g, '');
@@ -54,7 +56,7 @@ async function login() {
         }
     }  
 }
-
+//TODO look at times
 async function updateMainTime() {
     var resp = await post({"method":"get_time", "token":getCookie("token"), "timermode":"main"});
     console.log(resp);
