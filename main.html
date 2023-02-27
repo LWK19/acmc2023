@@ -27,12 +27,12 @@
     <div style="height:100%;display: flex;flex-flow: column;justify-content: space-between;">
         <div style="padding-top: 80px; text-align:center;width: 100%;">
             <div style="width: 50vw;margin: auto;display: flex;flex-direction: column;">
-                <div class="question-num" id="question-num">Question</div>
                 <div class="question-box">
                     <div id="question-img" onclick="enlarge()">
                         <img>
                     </div>
                 </div>
+                <div class="question-num" id="question-num">Question</div>
             </div>
             <div id="input-mcq" style="display: flex;padding:10px;margin:0 20px;justify-content:center;">
                 <div class="option-wrap">
@@ -51,9 +51,11 @@
                     <input type="checkbox" class="option" value="E" id="optE" name="opt[]">E</input>
                 </div>
             </div>
-            <div id="input-open" style="display: flex;padding:10px;margin:0 20px;justify-content:center;height:5vh">
+
+            <div id="input-open" style="display: flex;padding:10px 10px 0px;margin:0 20px;justify-content:center;height:5vh">
                 <input type="number" id="open" onkeydown="return event.keyCode !== 69" placeholder="Answer" style="width:30vw"></input>
             </div>
+            <div id="inputerror" style="padding-bottom:10px;text-align: center;color: red;font-style: italic;"></div>
         </div>
         <div style="text-align:center;width: 100%;justify-content: flex-end;">
             <div style="display: flex;justify-content: center;justify-self: flex-start;">
@@ -89,7 +91,6 @@
         <div class="popup">
             <div style="margin: 0 0 20px;font-size: 20px;">Loading...</div>
             <div class="loader"></div>
-
         </div>
         <div class="dimmer"></div>
     </div>

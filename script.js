@@ -7,6 +7,8 @@ globalThis.qn;
 
 //CLOUDFLARE
 async function post(payload){
+    document.getElementById("load").classList.remove("hidden");
+    document.getElementById("load").classList.add("visible");
     //let url = "https://acmc2023-worker.lwk19.workers.dev/";
     let url = "http://192.168.184.224:8787/";
             
@@ -27,7 +29,8 @@ async function post(payload){
     ).then(function (data){
         return data;
     })
-    console.log(req);
+    document.getElementById("load").classList.remove("visible");
+    document.getElementById("load").classList.add("hidden");
     return req;
 }
 
@@ -48,10 +51,9 @@ async function login() {
         }
     }  
 }
-//TODO look at maintime
+
 async function updateMainTime() {
     var resp = await post({"method":"get_time", "token":getCookie("token"), "timermode":"main"});
-    console.log(resp);
     if(resp.success) {
         time = parseInt(resp);
         mainStarts = new Date().getTime() / 1000;
@@ -71,7 +73,6 @@ async function updateMainTime() {
 
 async function updateTime() {
     var resp = await post({"method":"get_time", "token":getCookie("token"), "timermode":"inst"});
-    console.log(resp);
     if(resp.success){
         time = parseInt(resp.reply / 1000);
         starts = new Date().getTime() / 1000;
@@ -82,7 +83,6 @@ async function updateTime() {
 
 async function getTime() {
     var resp = await post({"method":"get_time", "token":getCookie("token"), "timermode":"inst"});
-    console.log(resp);
     if(resp.success){
         time = parseInt(resp.reply / 1000);
         starts = new Date().getTime() / 1000;
@@ -94,7 +94,6 @@ async function getTime() {
 
 async function getMainTime() {
     var resp = await post({"method":"get_time", "token":getCookie("token"), "timermode":"main"});
-    console.log(resp);
     if(resp.success){
         time = parseInt(resp.reply) / 1000;
         mainStarts = new Date().getTime() / 1000;
@@ -117,7 +116,6 @@ async function getMainTime() {
 
 async function start() {
     var resp = await post({"method":"start_time", "token":getCookie("token")});
-    console.log(resp);
     if (resp.success) {
         var ans_list = ["", "", "", "", "", "", "", "", "", "", "", "", "", "", ""];
         document.cookie = "ans_local=" + JSON.stringify(ans_list) + ";max-age=7200;path=/";
@@ -171,6 +169,8 @@ async function saveAns() {
     
                 shadeQNum();
                 nextQn();
+            }else if(resp.msg=="Input Error"){
+                document.getElementById("inputerror").innerHTML = "Enter numbers 0-9 only";
             }else{
                 handleErrors(resp);
             }
@@ -212,7 +212,6 @@ async function shadeQNum() {
 
 async function finish() {
     var resp = await post({"method":"end_time", "token":getCookie("token")});
-    console.log(resp);
     if (resp.success) {
         submit();
     }else{
@@ -273,6 +272,7 @@ function getQn(qn) {
 }
 function changeQn(q) {
     qn = q;
+    document.getElementById("inputerror").innerHTML = "";
     document.getElementById("question-num").innerHTML = "Question " + qn;
     var checkboxes = document.getElementsByName('opt[]');
     for (var checkbox of checkboxes) {
@@ -348,14 +348,16 @@ function preload(url, i) {
 }
 
 function handleErrors(resp){
-    //TODO add not started
     //TODO add Input Error, appear msg like login
     if (resp.msg == "Token Error") {
         location.href = "index";
     } else if (resp.msg == "Competition Over") {
         location.href = "finish";
+    } else if (resp.msg == "Competition Not Started") {
+        location.href = "instructions";
     } else if (resp.msg == "Already Submitted") {
         location.href = "finish";
+        alert("Already Submitted");
     } else{
         console.log(resp);
         alert("Response error");
